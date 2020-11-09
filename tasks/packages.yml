@@ -1,0 +1,60 @@
+---
+- name: packages | add dependencies
+  apt:
+    name:
+      - gnupg2
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+    update_cache: true
+    state: present
+
+- name: packages | add apt repo key for rabbitmq
+  apt_key:
+    url: "{{ item }}"
+    state: present
+  loop:
+    - https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc
+
+- name: packages | add rabbitmq repos
+  apt_repository:
+    repo: "{{ item.repo }}"
+    filename: "{{ item.file }}"
+    state: present
+  loop:
+    - repo: "deb https://dl.bintray.com/rabbitmq-erlang/debian {{ ansible_distribution_release }} erlang"
+      file: rabbitmq-erlang
+    - repo: "deb https://dl.bintray.com/rabbitmq/debian bionic main"
+      file: rabbitmq-main
+
+- name: packages | install rabbitmq with its dependecies
+  apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+    install_recommends: yes
+  vars:
+    packages:
+      - erlang-base
+      - erlang-asn1
+      - erlang-crypto
+      - erlang-eldap
+      - erlang-ftp
+      - erlang-inets
+      - erlang-mnesia
+      - erlang-os-mon
+      - erlang-parsetools
+      - erlang-public-key
+      - erlang-runtime-tools
+      - erlang-snmp
+      - erlang-ssl
+      - erlang-syntax-tools
+      - erlang-tftp
+      - erlang-tools
+      - erlang-xmerl
+      - rabbitmq-server
+
+- name: packages | enabled rabbitmq
+  service:
+    name: rabbitmq-server
+    enabled: true

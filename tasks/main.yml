@@ -1,0 +1,38 @@
+---
+- name: packages
+  import_tasks: packages.yml
+  tags:
+    - packages
+
+- name: erlang-cookie
+  import_tasks: erlang-cookie.yml
+  tags:
+    - erlang-cookie
+
+- name: hosts
+  import_tasks: hosts.yml
+  when: rabbitmq_exchange_hosts|bool
+  tags:
+    - hosts
+
+- name: config
+  import_tasks: config.yml
+  tags:
+    - config
+
+- name: cluster
+  import_tasks: cluster.yml
+  tags:
+    - cluster
+
+- name: cluster-ha
+  import_tasks: cluster-ha.yml
+  tags:
+    - cluster-ha
+  when: rabbitmq_ha|bool
+
+- name: user
+  import_tasks: user.yml
+  tags:
+    - user
+  when: rabbitmq_role == 'master'

@@ -1,0 +1,10 @@
+---
+- name: config | enable plugins
+  rabbitmq_plugin:
+    names: "{{ item }}"
+    prefix: /usr/lib/rabbitmq
+    state: enabled
+    new_only: yes
+  with_items: "{{ rabbitmq_plugins }}"
+  notify:
+    restart rabbitmq-server

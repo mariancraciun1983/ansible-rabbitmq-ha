@@ -1,0 +1,12 @@
+---
+- name: cluster | set_policy ha-mode
+  command: >-
+    rabbitmqctl set_policy
+    ha-mode "."
+    '{
+      "ha-mode":"exactly",
+      "ha-sync-mode":"automatic",
+      "ha-sync-batch-size":50000,
+      "ha-params":2
+    }'
+  changed_when: false

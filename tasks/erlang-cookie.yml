@@ -1,0 +1,46 @@
+---
+- name: erlang-cookie | check for existing .erlang.cookie
+  stat:
+    checksum_algorithm: sha1
+    path: /var/lib/rabbitmq/.erlang.cookie
+  register: erlang_cookie_file
+
+- name: erlang-cookie | verify if updates to .erlang.cookie are needed
+  set_fact:
+    erlang_cookie_file_needs_update: >-
+      {{
+        not erlang_cookie_file.stat.exists
+        or erlang_cookie_file.stat.checksum|default('-1') != rabbitmq_erlang_cookie | hash('sha1')
+      }}
+
+- name: erlang-cookie | update .erlang.cookie
+  block:
+
+  - name: erlang-cookie | backup old erlang cookie
+    copy:
+      src: /var/lib/rabbitmq/.erlang.cookie
+      dest: /var/lib/rabbitmq/.erlang.cookie.old
+      remote_src: true
+      force: true
+      mode: 0600
+    when: erlang_cookie_file.stat.exists
+
+  - name: erlang-cookie | stop rabbitmq
+    service:
+      name: rabbitmq-server
+      state: stopped
+
+  - name: erlang-cookie | update erlang cookie
+    template:
+      src: erlang.cookie.j2
+      dest: /var/lib/rabbitmq/.erlang.cookie
+      owner: rabbitmq
+      group: rabbitmq
+      mode: 0600
+
+  - name: erlang-cookie | start rabbitmq
+    service:
+      name: rabbitmq-server
+      state: started
+
+  when: erlang_cookie_file_needs_update

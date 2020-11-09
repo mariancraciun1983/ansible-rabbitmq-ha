@@ -1,0 +1,39 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars:
+    expected_master: "{{ _verify_expected_master }}"
+  tasks:
+    - name: verify api access with created user
+      uri:
+        url: http://localhost:15672/api/overview
+        method: GET
+        user: "{{ rabbitmq_user.username }}"
+        password: "{{ rabbitmq_user.password }}"
+        return_content: yes
+        validate_certs: false
+        status_code:
+          - 200
+
+    - name: verify node
+      uri:
+        url: http://localhost:15672/api/nodes
+        method: GET
+        user: "{{ rabbitmq_user.username }}"
+        password: "{{ rabbitmq_user.password }}"
+        return_content: yes
+        validate_certs: false
+        status_code:
+          - 200
+      register: nodes_out
+
+    - name: check cluster status
+      assert:
+        that: >-
+          (nodes_out['json'][0]['cluster_links'][0]['name'] == "rabbit@" + expected_master)
+          or (nodes_out['json'][1]['cluster_links'][0]['name'] == "rabbit@" + expected_master)
+        quiet: yes
+        fail_msg:
+          Failed to check the cluster_links for clustering
+          information with {{ expected_master }}

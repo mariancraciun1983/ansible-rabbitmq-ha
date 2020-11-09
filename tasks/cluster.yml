@@ -1,0 +1,44 @@
+---
+
+- name: cluster | check requirements
+  assert:
+    that:
+      - rabbitmq_role in ['master', 'slave']
+    quiet: yes
+    fail_msg: >-
+      The rabbitmq_role variable must be defined so that only has the value "master"
+      and all others have value "slave"
+
+- name: cluster | get master name
+  set_fact:
+    rabbitmq_cluster_master: "{{ _rabbitmq_master_envvars.ansible_hostname | mandatory }}"
+
+- name: cluster | ensure rabbitmq is up
+  service:
+    name: rabbitmq-server
+    state: started
+
+- name: cluster | ensure rabbitmq app is up
+  command: rabbitmqctl start_app
+  changed_when: false
+
+- name: cluster | check if already in cluster
+  command: rabbitmqctl cluster_status
+  register: cluster_status
+  changed_when: false
+
+- name: cluster | check replication status
+  set_fact:
+    is_replicating: "{{ cluster_status.stdout.find('rabbit@' + rabbitmq_cluster_master) != -1 }}"
+
+- name: cluster | join master
+  block:
+    - name: stop rabbitmq app
+      command: rabbitmqctl stop_app
+
+    - name: add this node to cluster
+      command: rabbitmqctl join_cluster rabbit@{{ rabbitmq_cluster_master }}
+
+    - name: start rabbitmq app
+      command: rabbitmqctl start_app
+  when:  (rabbitmq_role == 'slave') and (not is_replicating)

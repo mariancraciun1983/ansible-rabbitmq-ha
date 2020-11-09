@@ -1,0 +1,18 @@
+rabbitmq_role:
+
+_rabbitmq_master_envvars: "{{ hostvars | filter_first_hostvars('rabbitmq_role','master') }}"
+
+rabbitmq_exchange_hosts: false
+rabbitmq_exchange_hosts_internal_ip: false
+
+rabbitmq_erlang_cookie: AWQOKEDSQALRPCLNMEQF
+
+rabbitmq_plugins:
+  - rabbitmq_management
+
+rabbitmq_ha: false
+
+rabbitmq_remove_guest: true
+rabbitmq_user:
+  username:
+  password:

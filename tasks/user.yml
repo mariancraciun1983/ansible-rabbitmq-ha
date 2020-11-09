@@ -1,0 +1,29 @@
+---
+- name: user
+  block:
+    - name: user | create user
+      command: rabbitmqctl add_user {{ rabbitmq_user.username }} '{{ rabbitmq_user.password }}'
+      register: res
+      failed_when: res.rc != 70 and res.rc != 0
+      changed_when: res.rc != 70
+
+    - name: user | create {{ rabbitmq_user.username }} as admin
+      rabbitmq_user:
+        user: "{{ rabbitmq_user.username }}"
+        password: "{{ rabbitmq_user.password }}"
+        tags: administrator, {{ rabbitmq_user.username }}
+        vhost: /
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+        state: present
+      no_log: yes
+      changed_when: false
+  when: rabbitmq_user.username
+
+- name: user | ensure guest is removed
+  command: rabbitmqctl delete_user guest
+  register: res
+  failed_when: res.rc != 67 and res.rc != 0
+  changed_when: res.rc != 67
+  when: rabbitmq_remove_guest|bool
